@@ -10,10 +10,13 @@ https://support.google.com/accounts/answer/185833?p=InvalidSecondFactor&visit_id
 Step 2) Enter the details in the file .env, present in the same folder
 \
 \
-Step 3) On your terminal run: npm i && pm2 start vaccineNotifier.js
+Step 3) On your terminal run: npm i && pm2 start vaccineNotifier.js --watch
 \
 \
 To close the app run: pm2 stop vaccineNotifier.js && pm2 delete vaccineNotifier.js
 
+To check logs run: pm2 logs vaccineNotifier
+\
+\
 Here's a sample of the resultant emails:
 ![image info](./emailBody.png)
