@@ -47,13 +47,13 @@ function getSlotsForDate(DATE) {
         url: 'https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=' + DISTRICT + '&date=' + DATE,
         headers: {
             'Host': 'cdn-api.co-vin.in',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+            'User-Agent': 'PostmanRuntime/7.26.8'
         }
     };
 
     axios(config)
-        .then(function (slots) {
-            let centers = slots.data.centers;
+        .then(function (response) {
+            let centers = response.data.centers;
             // let sessions = centers.flatMap(center => center.sessions)
             let sessions = []
             centers.forEach(center => {
@@ -67,20 +67,23 @@ function getSlotsForDate(DATE) {
                     sessions.push(tmp);
                 });
             });
-            let validSlots = sessions.filter(session => session.min_age_limit <= AGE &&  session.available_capacity > 0)
-            console.log({date:DATE, validSlots: validSlots.length})
-            if(validSlots.length > 0) {
-                notifyMe(validSlots, DATE);
+            let validSlots = sessions.filter(session => session.min_age_limit <= AGE &&  session.available_capacity_dose1 > 0)  //Checks against dose 1 capacity
+            let sessionsPerDate = groupArrayOfObjects(validSlots,"date");
+            for (const [date, validSlots] of Object.entries(sessionsPerDate)) {
+                console.log({date:date, validSlots: validSlots.length});
+                if(validSlots.length > 0) {
+                    notifyMe(validSlots, date);
+                }
             }
         })
         .catch(function (error) {
-            console.log(error);
+            if(error.response.status != 401){
+                console.log(error);
+            }
         });
 }
 
-async function
-
-notifyMe(validSlots, date){
+async function notifyMe(validSlots, date){
     notifier.notifyUser(EMAIL, 'VACCINE AVAILABLE', validSlots, date, (err, result) => {
         if(err) {
             console.error({err});
@@ -91,14 +94,20 @@ notifyMe(validSlots, date){
 async function fetchNext10Days(){
     let dates = [];
     let today = moment();
-    for(let i = 0 ; i < 5 ; i ++ ){
+    for(let i = 0 ; i < 3 ; i ++ ){
         let dateString = today.format('DD-MM-YYYY')
         dates.push(dateString);
-        today.add(1, 'day');
+        today.add(7, 'day');
     }
     return dates;
 }
 
+function groupArrayOfObjects(list, key) {
+    return list.reduce(function(rv, x) {
+      (rv[x[key]] = rv[x[key]] || []).push(x);
+      return rv;
+    }, {});
+};
 
 main()
 .then(() => {console.log('Vaccine availability checker started.')})
